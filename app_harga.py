@@ -10,6 +10,7 @@ st.set_page_config(
 )
 
 # Kustomisasi CSS agar kartu harga terlihat profesional dan rapi saat dibuka di HP Android
+# Parameter sudah diperbaiki menjadi unsafe_allowed_html=True
 st.markdown("""
     <style>
     .reportview-container .main .block-container { max-width: 1000px; }
@@ -27,7 +28,7 @@ st.markdown("""
     .price-label { font-size: 0.8rem; color: #6c757d; text-transform: uppercase; font-weight: bold; }
     .price-value { font-size: 1rem; color: #212529; font-weight: 600; margin-top: 2px; }
     </style>
-""", unsafe_allowed_color_html=True)
+""", unsafe_allowed_html=True)
 
 st.title("🔍 Sistem Pencarian Harga Produk")
 st.write("Cari nama suku cadang atau barang untuk memantau detail harga pokok, HET, eceran, bengkel, dan grosir.")
@@ -35,17 +36,16 @@ st.write("Cari nama suku cadang atau barang untuk memantau detail harga pokok, H
 # 2. Fungsi Memuat Data dari File
 @st.cache_data
 def load_data():
-    # Menemukan file data baik dalam format .csv maupun .xlsx di dalam folder
     file_csv = "data_item.csv"
     file_xlsx = "data_item.xlsx"
     
     try:
         if os.path.exists(file_xlsx):
-            # Membaca file excel khusus pada sheet "data item new" sesuai permintaan Anda
+            # Membaca file excel khusus pada sheet "data item new"
             df = pd.read_excel(file_xlsx, sheet_name="data item new")
             return df
         elif os.path.exists(file_csv):
-            # Jika di-deploy sebagai CSV, baca file CSV
+            # Jika menggunakan file CSV
             df = pd.read_csv(file_csv)
             return df
         else:
@@ -62,10 +62,10 @@ if df_raw is not None:
     df.columns = [str(col).strip().lower() for col in df.columns]
 
     # Mapping kolom dari file Anda [Nama Item, Merek, Harga Pokok, Het, Ecer, Bengkel, Grosir]
-    # Kami mendeteksi kolom ecer Anda memiliki spasi bawaan ('ecer '), kode ini otomatis membersihkannya
+    # Otomatis membersihkan kolom ecer jika mengandung spasi bawaan ('ecer ')
     df = df.rename(columns=lambda x: 'ecer' if 'ecer' in x else x)
 
-    # Pastikan kolom-kolom utama yang Anda inginkan ada di dalam dataframe
+    # Pastikan kolom-kolom utama yang Anda inginkan ada di dalam database
     target_columns = ['nama item', 'merek', 'harga pokok', 'het', 'ecer', 'bengkel', 'grosir']
     for col in target_columns:
         if col not in df.columns:
@@ -86,7 +86,7 @@ if df_raw is not None:
             
             # 4. Tampilan Hasil Pencarian Berbentuk Kartu Ringkas (Sangat Nyaman di Layar HP)
             for idx, row in results.iterrows():
-                # Fungsi pembantu untuk merapikan format Rupiah (.0f menghilangkan desimal/koma yang berantakan)
+                # Fungsi pembantu untuk merapikan format Rupiah
                 def format_idr(val):
                     try:
                         if pd.isna(val) or val == "" or val == "-":
@@ -95,7 +95,7 @@ if df_raw is not None:
                     except:
                         return str(val)
 
-                # Render komponen antarmuka kartu harga
+                # Render komponen kartu harga
                 st.markdown(f"""
                 <div class="price-card">
                     <div class="price-title">📦 {row['nama item']}</div>
@@ -116,4 +116,4 @@ if df_raw is not None:
 
 else:
     st.warning("⚠️ File data (`data_item.xlsx` atau `data_item.csv`) tidak ditemukan di folder aplikasi Anda.")
-    st.info("Pastikan Anda sudah menyimpan file Excel Anda dengan nama `data_item.xlsx` (dan pastikan sheet-nya bernama 'data item new') atau file CSV dengan nama `data_item.csv` di dalam folder yang sama.")
+    st.info("Pastikan Anda sudah menyimpan file database Anda dengan nama `data_item.xlsx` (sheet: 'data item new') atau `data_item.csv` di folder GitHub yang sama.")
