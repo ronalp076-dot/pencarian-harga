@@ -2,38 +2,17 @@ import streamlit as st
 import pandas as pd
 import os
 
-# 1. Konfigurasi Tampilan Halaman (Responsif untuk HP & Laptop)
+# 1. Konfigurasi Tampilan Halaman Resmi Streamlit
 st.set_page_config(
     page_title="Pencarian Harga Produk",
     page_icon="🔍",
     layout="wide",
 )
 
-# Kustomisasi CSS agar kartu harga terlihat profesional dan rapi saat dibuka di HP Android
-# Parameter sudah diperbaiki menjadi unsafe_allowed_html=True
-st.markdown("""
-    <style>
-    .reportview-container .main .block-container { max-width: 1000px; }
-    .price-card {
-        background-color: #f8f9fa;
-        padding: 18px;
-        border-radius: 12px;
-        border-left: 6px solid #28a745;
-        margin-bottom: 15px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-    .price-title { color: #1c3d5a; font-size: 1.15rem; font-weight: bold; margin-bottom: 10px; }
-    .price-grid { display: flex; flex-wrap: wrap; gap: 15px; }
-    .price-item { flex: 1; min-width: 130px; background: white; padding: 8px 12px; border-radius: 6px; border: 1px solid #e9ecef; }
-    .price-label { font-size: 0.8rem; color: #6c757d; text-transform: uppercase; font-weight: bold; }
-    .price-value { font-size: 1rem; color: #212529; font-weight: 600; margin-top: 2px; }
-    </style>
-""", unsafe_allowed_html=True)
-
 st.title("🔍 Sistem Pencarian Harga Produk")
 st.write("Cari nama suku cadang atau barang untuk memantau detail harga pokok, HET, eceran, bengkel, dan grosir.")
 
-# 2. Fungsi Memuat Data dari File
+# 2. Fungsi Memuat Data dari File (.xlsx atau .csv)
 @st.cache_data
 def load_data():
     file_csv = "data_item.csv"
@@ -82,9 +61,9 @@ if df_raw is not None:
         results = df_display[df_display['nama item'].str.contains(search_query, case=False, na=False)]
         
         if not results.empty:
-            st.success(f"Ditemukan {len(results)} item yang cocok:")
+            st.success(f"🎉 Ditemukan {len(results)} item yang cocok:")
             
-            # 4. Tampilan Hasil Pencarian Berbentuk Kartu Ringkas (Sangat Nyaman di Layar HP)
+            # 4. Tampilan Grid Resmi Streamlit yang Otomatis Sangat Rapi di HP Android & Laptop
             for idx, row in results.iterrows():
                 # Fungsi pembantu untuk merapikan format Rupiah
                 def format_idr(val):
@@ -95,20 +74,21 @@ if df_raw is not None:
                     except:
                         return str(val)
 
-                # Render komponen kartu harga
-                st.markdown(f"""
-                <div class="price-card">
-                    <div class="price-title">📦 {row['nama item']}</div>
-                    <div class="price-grid">
-                        <div class="price-item"><div class="price-label">🏷️ Merek</div><div class="price-value">{row['merek']}</div></div>
-                        <div class="price-item"><div class="price-label">💰 Harga Pokok</div><div class="price-value">{format_idr(row['harga pokok'])}</div></div>
-                        <div class="price-item"><div class="price-label">⚠️ HET</div><div class="price-value">{format_idr(row['het'])}</div></div>
-                        <div class="price-item"><div class="price-label">🛒 Ecer</div><div class="price-value">{format_idr(row['ecer'])}</div></div>
-                        <div class="price-item"><div class="price-label">🔧 Bengkel</div><div class="price-value">{format_idr(row['bengkel'])}</div></div>
-                        <div class="price-item"><div class="price-label">📦 Grosir</div><div class="price-value">{format_idr(row['grosir'])}</div></div>
-                    </div>
-                </div>
-                """, unsafe_allowed_html=True)
+                # Membuat kotak kontainer untuk satu produk
+                with st.container(border=True):
+                    st.subheader(f"📦 {row['nama item']}")
+                    
+                    # Membagi menjadi 3 kolom (Di HP akan otomatis menyusun ke bawah, di Laptop berjejer ke samping)
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.markdown(f"**🏷️ Merek:** {row['merek']}")
+                        st.markdown(f"**💰 Harga Pokok:** {format_idr(row['harga pokok'])}")
+                    with col2:
+                        st.markdown(f"**⚠️ HET:** {format_idr(row['het'])}")
+                        st.markdown(f"**🛒 Ecer:** {format_idr(row['ecer'])}")
+                    with col3:
+                        st.markdown(f"**🔧 Bengkel:** {format_idr(row['bengkel'])}")
+                        st.markdown(f"**📦 Grosir:** {format_idr(row['grosir'])}")
         else:
             st.warning("Produk tidak ditemukan. Silakan periksa kembali ejaan kata kunci Anda.")
     else:
